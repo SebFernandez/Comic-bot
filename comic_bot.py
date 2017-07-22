@@ -8,17 +8,14 @@ def bot_loggin_R ():										#Log to Reddit
 				 client_id = config.client_id, 
 				 client_secret = config.client_secret, 
 				 user_agent = 'Bot that downloads comics from Reddit.')
-	print ('\nLogged in Reddit')
+	print ('Logged in Reddit')
 	return r
 
 def bot_loggin_T ():										#Log to Twitter
 	auth = OAuthHandler(consumer_key, consumer_secret)
 	auth.set_access_token(access_token, access_token_secret)
 	api = API(auth)
-
 	return api
-
-	print ('Logged in Twitter.')
 
 def comic_date ():													  #Picks a random date to choose the comic strip
 	YY = random.randrange (2000, time.localtime(time.time()).tm_year) #To have the years up to date.
@@ -28,7 +25,7 @@ def comic_date ():													  #Picks a random date to choose the comic strip
 	else:
 		DD = random.randrange (1,31)
 
-	print ('\n\n' + str (DD) + '/' + str (MM) + '/' + str (YY))	
+	print ('\n\n>> ' + str (DD) + '/' + str (MM) + '/' + str (YY))	
 
 	return DD, MM, YY 				#date/fecha = [DD, MM, YY]
 
@@ -59,7 +56,7 @@ def snoopy (fecha):
 	else:
 		URL_D = URL + str (fecha [2]) + '/daily/pe_c' + str (fecha [2]-2000) + str (fecha [1]) + str (fecha [0]) + '.jpg'
 
-	print ('\nPeanuts: ' + URL_D)
+	print ('>> Peanuts: ' + URL_D)
 
 	return comic_name, comic_author, URL_D			#image/link = [name, author, url] ---> Info of the comic strip
 
@@ -77,7 +74,7 @@ def garfield (fecha):
 	else:
 		URL_D = URL + str (fecha [2]) + '/' + str (fecha [2]) + str (fecha [1]) + str (fecha [0]) + '.gif'
 
-	print ('\nGarfield: ' + URL_D)
+	print ('>> Garfield: ' + URL_D)
 
 	return comic_name, comic_author, URL_D			#image/link = [name, author, url] ---> Info of the comic strip
 
@@ -111,10 +108,12 @@ while True:
 		date = comic_date ()
 		link = comic_tweet (date)
 		upload (date, link)
-		print ("\n\nTweet!")
-		time.sleep (3600)				#1 hour
+		print (">>Tweet!")
+		print ("\t---------------------------------------------------------------")
+		time.sleep (7200)				#2 hour
 
 	except:
 		api = bot_loggin_T ()
 		api.update_status (status = 'heyyeyaaeyaaaeyaeyaa! @Zeby95')
-		time.sleep (60)
+		print (">>ERROR!")
+		time.sleep (120)
