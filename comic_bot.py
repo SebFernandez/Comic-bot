@@ -107,8 +107,14 @@ def upload (fecha, image):
 bot_loggin_R ()
 
 while True: 
-	date = comic_date ()
-	link = comic_tweet (date)
-	upload (date, link)
-	print ("\n\nTweet!")
-	time.sleep (3600)				#1 hour
+	try:
+		date = comic_date ()
+		link = comic_tweet (date)
+		upload (date, link)
+		print ("\n\nTweet!")
+		time.sleep (3600)				#1 hour
+
+	except:
+		api = bot_loggin_T ()
+		api.update_status (status = 'heyyeyaaeyaaaeyaeyaa! @Zeby95')
+		time.sleep (60)
