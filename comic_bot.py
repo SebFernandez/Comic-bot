@@ -112,8 +112,8 @@ while True:
 		print ("\t---------------------------------------------------------------")
 		time.sleep (7200)				#2 hour
 
-	except:
+	except TweepError as e:
 		api = bot_loggin_T ()
 		api.update_status (status = 'heyyeyaaeyaaaeyaeyaa! @Zeby95')
-		print (">>ERROR!")
+		print (">> ERROR!\n>> " + e.reason)
 		time.sleep (120)
