@@ -1,6 +1,7 @@
 import praw, config, os, requests, time, random
 from cred_T import *
 from tweepy import *
+from bs4 import BeautifulSoup
 
 def bot_loggin_R ():										#Log to Reddit
 	r = praw.Reddit (username = config.username,
@@ -8,7 +9,7 @@ def bot_loggin_R ():										#Log to Reddit
 				 client_id = config.client_id, 
 				 client_secret = config.client_secret, 
 				 user_agent = 'Bot that downloads comics from Reddit.')
-	print ('Logged in Reddit')
+	print ('>> Logged in Reddit\n')
 	return r
 
 def bot_loggin_T ():										#Log to Twitter
@@ -24,8 +25,6 @@ def comic_date ():													  #Picks a random date to choose the comic strip
 		DD = random.randrange (1, 30)
 	else:
 		DD = random.randrange (1,31)
-
-	print ('\n\n>> ' + str (DD) + '/' + str (MM) + '/' + str (YY))	
 
 	return DD, MM, YY 				#date/fecha = [DD, MM, YY]
 
@@ -56,7 +55,6 @@ def snoopy (fecha):
 	else:
 		URL_D = URL + str (fecha [2]) + '/daily/pe_c' + str (fecha [2]-2000) + str (fecha [1]) + str (fecha [0]) + '.jpg'
 
-	print ('>> Peanuts: ' + URL_D)
 
 	return comic_name, comic_author, URL_D			#image/link = [name, author, url] ---> Info of the comic strip
 
@@ -74,25 +72,63 @@ def garfield (fecha):
 	else:
 		URL_D = URL + str (fecha [2]) + '/' + str (fecha [2]) + str (fecha [1]) + str (fecha [0]) + '.gif'
 
-	print ('>> Garfield: ' + URL_D)
 
 	return comic_name, comic_author, URL_D			#image/link = [name, author, url] ---> Info of the comic strip
 
+def cyanide ():													# (!) Attention with this function, returns more variables than the others
+	URL = requests.get ('http://explosm.net/comics/random/')
+	comic_name = 'Cyanide & happiness'
+
+	soup = BeautifulSoup (URL.content, "html.parser")
+	img = soup.find_all (id = 'main-comic')
+
+	author = soup.find_all (class_ = 'author-credit-name')
+	comic_author = author [0].get_text()
+	comic_author = comic_author [3:len (comic_author)]
+
+	date = soup.find_all (class_ = 'zeta small-bottom-margin past-week-comic-title')
+	r_date = date[0].get_text()
+	DD = r_date [8:10]
+	MM = r_date [5:7]
+	YY = r_date [0:4]
+
+	URL_D = 'http:' + img[0].get ('src')
+
+	return comic_name, comic_author, URL_D, DD, MM, YY			#image/link = [name, author, url, DD, MM, YY] ---> Info of the comic strip
+
 def comic_tweet (fecha):							#Here decides which comic strip will tweet
-	if (random.randrange (0,2) == 0):
+	c_t = random.randrange (0,3)
+	if (c_t == 0):
 		url = snoopy (fecha)
-	else:
-		url = garfield (fecha)	
+	elif (c_t == 1 ):
+		url = garfield (fecha)
+	elif (c_t == 2):
+		url = cyanide ()
 
 	return url
 
 def tweet_text (fecha, image):						#Status of the tweet
-	if (image [0] == 'Peanuts'):
-		tweet = image [0] + ', made by: ' + image [1] + '.\nDate: ' + str (fecha [0]) + '/' + str (fecha [1]) + '/' + str (fecha [2]) + '\n\n' + '#Comics #Snoopy #CharlieBrown #Woodstock'
-	else:
-		tweet = image [0] + ', made by: ' + image [1] + '.\nDate: ' + str (fecha [0]) + '/' + str (fecha [1]) + '/' + str (fecha [2]) + '\n\n' + '#Comics #Garfield #Odie #Jon'
+	line = image [0] + ', made by: ' + image [1] + '.\nDate: ' + str (fecha [0]) + '/' + str (fecha [1]) + '/' + str (fecha [2]) + '\n\n' + '#Comics '
 
-	return tweet
+	if (len (image) == 3):
+		if (image [0] == 'Peanuts'):
+			line += '#Snoopy #CharlieBrown #Woodstock'
+		elif (image [0] == 'Garfield'):
+			line += '#Garfield #Odie #Jon'
+	else:		
+		if (image [0] == 'Cyanide & happiness'):
+			line = image [0] + ', made by: ' + image [1] + '.\nDate: ' + str (image [3]) + '/' + str (image [4]) + '/' + str (image [5]) + '\n\n' + '#Comics #CyanideAndHappiness'
+
+	return line
+
+def log (fecha, image):
+	print (">> Comic: \t" + image [0])
+	print (">> URL: \t" + image [2])
+	
+	if (image [0] == 'Peanuts' or image [0] == 'Garfield'):
+		print (">> Date: \t" + str (fecha [0]) + '/' + str (fecha [1]) + '/' + str (fecha [2]))
+	else:
+		print (">> Date: \t" + str (image [3]) + '/' + str (image [4]) + '/' + str (image [5]))
 
 def upload (fecha, image):
 	app = bot_loggin_T ()
@@ -107,10 +143,16 @@ while True:
 	try:
 		date = comic_date ()
 		link = comic_tweet (date)
+		log (date, link)
 		upload (date, link)
-		print (">>Tweet!")
-		print ("\t---------------------------------------------------------------")
+		print (">> Tweet!")
+		print ("\n\t---------------------------------------------------------------")
 		time.sleep (7200)				#2 hour
+
+	except TweepError as e:
+		if (e.api_code == 187):			#Code error --> Status duplicate
+			print (">> ERROR!\n>> " + e.reason)
+			pass
 
 	except TweepError as e:
 		api = bot_loggin_T ()
