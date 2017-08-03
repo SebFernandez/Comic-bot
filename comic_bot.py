@@ -3,7 +3,7 @@ from cred_T import *
 from tweepy import *
 from bs4 import BeautifulSoup
 
-def bot_loggin_R ():										#Log to Reddit
+def bot_loggin_R ():											#Log to Reddit
 	r = praw.Reddit (username = config.username,
 				 password = config.password, 
 				 client_id = config.client_id, 
@@ -12,7 +12,7 @@ def bot_loggin_R ():										#Log to Reddit
 	print ('>> Logged in Reddit\n')
 	return r
 
-def bot_loggin_T ():										#Log to Twitter
+def bot_loggin_T ():											#Log to Twitter
 	auth = OAuthHandler(consumer_key, consumer_secret)
 	auth.set_access_token(access_token, access_token_secret)
 	api = API(auth)
@@ -26,12 +26,32 @@ def comic_date ():													  #Picks a random date to choose the comic strip
 	else:
 		DD = random.randrange (1,31)
 
-	return DD, MM, YY 				#date/fecha = [DD, MM, YY]
+	return DD, MM, YY 											#date/fecha = [DD, MM, YY]
 
-def write (direc):					
-	f = open ('comic.jpg', 'wb')
-	f.write (requests.get (direc).content)
-	f.close
+def write (date):					
+	try:
+		f = open ('comic.jpg', 'wb')
+		comic_info = comic_tweet (date)
+		f.write (requests.get (comic_info [2]).content)												#Requests code for Snoopy! (!)									#Peanuts web has some issues with URLs
+		f.close 
+		
+		return comic_info
+
+	except requests.exceptions.ConnectionError as e:    # This is the correct syntax
+		print (">> " + e)
+
+	except requests.exceptions.Timeout as e:
+		print (">> " + e)
+	    # Maybe set up for a retry, or continue in a retry loop
+	except requests.exceptions.TooManyRedirects as e:
+		print (">> " + e)
+	    # Tell the user their URL was bad and try a different one
+	except requests.exceptions.RequestException as e:
+	    # catastrophic error. bail.
+	    print (">> " + e)
+
+	except requests.exceptions.HTTPError as e:
+		print (">> " + e)
 
 def snoopy (fecha):
 	URL = 'http://www.peanuts.com/wp-content/comic-strip/color-low-resolution/desktop/'				
@@ -56,14 +76,14 @@ def snoopy (fecha):
 		URL_D = URL + str (fecha [2]) + '/daily/pe_c' + str (fecha [2]-2000) + str (fecha [1]) + str (fecha [0]) + '.jpg'
 
 
-	return comic_name, comic_author, URL_D			#image/link = [name, author, url] ---> Info of the comic strip
+	return comic_name, comic_author, URL_D						#image/link = [name, author, url] ---> Info of the comic strip
 
 def garfield (fecha):
-	URL = 'https://d1ejxu6vysztl5.cloudfront.net/comics/garfield/' #2017/2017-07-13.gif'
+	URL = 'https://d1ejxu6vysztl5.cloudfront.net/comics/garfield/' 
 	comic_name = 'Garfield'
 	comic_author = 	'Jim Davis'
 
-	if (fecha [0] < 10 and fecha [1] < 10):	#Format to access at the URL picture.
+	if (fecha [0] < 10 and fecha [1] < 10):						#Format to access at the URL picture.
 		URL_D = URL + str (fecha [2]) + '/' + str (fecha [2]) + '-0' + str (fecha [1]) + '-0' + str (fecha [0]) + '.gif'
 	elif (fecha [0] < 10):
 		URL_D = URL + str (fecha [2]) + '/' + str (fecha [2]) + '-' + str (fecha [1]) + '-0' + str (fecha [0]) + '.gif'
@@ -73,7 +93,7 @@ def garfield (fecha):
 		URL_D = URL + str (fecha [2]) + '/' + str (fecha [2]) + str (fecha [1]) + str (fecha [0]) + '.gif'
 
 
-	return comic_name, comic_author, URL_D			#image/link = [name, author, url] ---> Info of the comic strip
+	return comic_name, comic_author, URL_D						#image/link = [name, author, url] ---> Info of the comic strip
 
 def cyanide ():													# (!) Attention with this function, returns more variables than the others
 	URL = requests.get ('http://explosm.net/comics/random/')
@@ -96,7 +116,7 @@ def cyanide ():													# (!) Attention with this function, returns more var
 
 	return comic_name, comic_author, URL_D, DD, MM, YY			#image/link = [name, author, url, DD, MM, YY] ---> Info of the comic strip
 
-def comic_tweet (fecha):							#Here decides which comic strip will tweet
+def comic_tweet (fecha):										#Here decides which comic strip will tweet
 	c_t = random.randrange (0,3)
 	if (c_t == 0):
 		url = snoopy (fecha)
@@ -107,7 +127,7 @@ def comic_tweet (fecha):							#Here decides which comic strip will tweet
 
 	return url
 
-def tweet_text (fecha, image):						#Status of the tweet
+def tweet_text (fecha, image):									#Status of the tweet 
 	line = image [0] + ', made by: ' + image [1] + '.\nDate: ' + str (fecha [0]) + '/' + str (fecha [1]) + '/' + str (fecha [2]) + '\n\n' + '#Comics '
 
 	if (len (image) == 3):
@@ -130,11 +150,13 @@ def log (fecha, image):
 	else:
 		print (">> Date: \t" + str (image [3]) + '/' + str (image [4]) + '/' + str (image [5]))
 
-def upload (fecha, image):
+	print (">> Time: \t" + str (time.localtime (time.time()).tm_hour) + ":" + str (time.localtime (time.time()).tm_min))
+
+def upload (fecha):
 	app = bot_loggin_T ()
+	image = write (fecha)
 	text = tweet_text (fecha, image)
-	write (image [2])
-	fn = os.getcwd () + '/comic.jpg'
+	log (fecha, image)
 	app.update_with_media (filename = 'comic.jpg', status = text)
 
 bot_loggin_R ()
@@ -142,20 +164,14 @@ bot_loggin_R ()
 while True: 
 	try:
 		date = comic_date ()
-		link = comic_tweet (date)
-		log (date, link)
-		upload (date, link)
+		upload (date)
 		print (">> Tweet!")
 		print ("\n\t---------------------------------------------------------------")
-		time.sleep (7200)				#2 hour
-
-	except TweepError as e:
-		if (e.api_code == 187):			#Code error --> Status duplicate
-			print (">> ERROR!\n>> " + e.reason)
-			pass
+		time.sleep (7200)				
 
 	except TweepError as e:
 		api = bot_loggin_T ()
 		api.update_status (status = 'heyyeyaaeyaaaeyaeyaa! @Zeby95')
-		print (">> ERROR!\n>> " + e.reason)
+		print ("\n>> ERROR!\n>> " + e.reason)
+		print ("\n\t---------------------------------------------------------------")
 		time.sleep (120)
