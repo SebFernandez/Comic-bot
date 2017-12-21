@@ -13,13 +13,13 @@ class comic:
 		self.date = ''
 		self.hashtag = hashtag
 
-snoopy = comic ('Peanuts', 'Charles M. Schulz', 'https://www.peanuts.com/comics/#', '#Snoopy #CharlieBrown #Woodstock')
+snoopy = comic ('Peanuts', 'Charles M. Schulz', 'https://www.gocomics.com/random/peanuts', '#Snoopy #CharlieBrown #Woodstock')
 garfield = comic ('Garfield', 'Jim Davis', 'https://d1ejxu6vysztl5.cloudfront.net/comics/garfield/', '#Garfield #Odie #Jon')
 cyanide = comic ('Cyanide & happiness', 'author', 'http://explosm.net/comics/random/', '#CyanideAndHappiness')								#Cyanide has a group of authors, certain info is completed on ComicTweet ()
 
 comicArray = [snoopy, garfield, cyanide]
 
-def botLoggin ():											#Log to Twitter
+def botLogin ():																	#Log to Twitter
 	auth = OAuthHandler(consumer_key, consumer_secret)
 	auth.set_access_token(access_token, access_token_secret)
 	api = API(auth)
@@ -30,10 +30,10 @@ def write (comicStrip):
 
 	try:
 		f = open ('comic.jpg', 'wb')
-		f.write (requests.get (comicArray [comicStrip].url).content)												#Requests code for Snoopy! (!)									#Peanuts web has some issues with URLs
+		f.write (requests.get (comicArray [comicStrip].url).content)												
 		f.close 
 
-	except requests.exceptions.ConnectionError as e:    # This is the correct syntax
+	except requests.exceptions.ConnectionError as e:    							# This is the correct syntax
 		print (error + str (e))
 	except requests.exceptions.Timeout as e:
 		print (error + str (e))
@@ -48,11 +48,25 @@ def write (comicStrip):
 	except requests.exceptions.HTTPError as e:
 		print (error + str (e)) 	
 
-def comicTweet (comicStrip):										#Here decides which comic strip will tweet
+def comicTweet (comicStrip):													#Here decides which comic strip will tweet
 	if (comicStrip == 0):
-		url = snoopy (fecha)
+		URL = requests.get (snoopy.url)
+
+		soup = BeautifulSoup (URL.content, 'html.parser')
+		img = soup.find_all ('picture')
+		auxString = img [1]
+		auxString = auxString.find_all ('img')
+		snoopy.url = auxString [0].get ('src')
+
+		auxString = soup.find_all (class_="btn-calendar-nav item-control gc-calendar-wrapper js-calendar-wrapper")
+		auxString = auxString [0].get ('data-date')
+		YY = auxString [0:4]
+		MM = auxString [5:7]
+		DD = auxString [8:11]
+		snoopy.date = DD + '/' + MM + '/' + YY
+
 	elif (comicStrip == 1 ):
-		YY = random.randrange (2000, time.localtime(time.time()).tm_year) #To have the years up to date.
+		YY = random.randrange (2000, time.localtime(time.time()).tm_year) 						#To have the years up to date.
 		MM = random.randrange (1,12)
 		if (MM % 2 == 0):
 			DD = random.randrange (1, 30)
@@ -61,7 +75,7 @@ def comicTweet (comicStrip):										#Here decides which comic strip will tweet
 
 		garfield.date = str (DD) + '/' + str (MM) + '/' + str (YY)
 
-		if (DD < 10 and MM < 10):						#Format to access at the URL picture.
+		if (DD < 10 and MM < 10):													#Format to access at the URL picture.
 			garfield.url = garfield.url + str (YY) + '/' + str (YY) + '-0' + str (MM) + '-0' + str (DD) + '.gif'
 		elif (DD < 10):
 			garfield.url = garfield.url + str (YY) + '/' + str (YY) + '-' + str (MM) + '-0' + str (DD) + '.gif'
@@ -95,7 +109,7 @@ def log (comicStrip):
 
 def upload ():
 	bot = botLoggin ()
-	comicStrip = random.randrange (0,2) + 1
+	comicStrip = random.randrange (0,3)
 	comicTweet (comicStrip)
 	write (comicStrip)
 	tweetLine = comicArray [comicStrip].comicName + ', made by: ' + comicArray [comicStrip].comicAuthor + '.\nDate: ' + comicArray [comicStrip].date + '\n\n#Comics ' + comicArray [comicStrip].hashtag
