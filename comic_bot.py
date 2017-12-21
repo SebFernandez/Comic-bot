@@ -1,177 +1,126 @@
-import praw, config, os, requests, time, random
+#This code does web scraping, so urls are going to be dynamic.
+
+import os, requests, time, random
 from cred_T import *
 from tweepy import *
 from bs4 import BeautifulSoup
 
-def bot_loggin_R ():											#Log to Reddit
-	r = praw.Reddit (username = config.username,
-				 password = config.password, 
-				 client_id = config.client_id, 
-				 client_secret = config.client_secret, 
-				 user_agent = 'Bot that downloads comics from Reddit.')
-	print ('>> Logged in Reddit\n')
-	return r
+class comic:
+	def __init__ (self, comicName, comicAuthor, url, hashtag):
+		self.comicName = comicName
+		self.comicAuthor = comicAuthor
+		self.url = url
+		self.date = ''
+		self.hashtag = hashtag
 
-def bot_loggin_T ():											#Log to Twitter
+snoopy = comic ('Peanuts', 'Charles M. Schulz', 'https://www.gocomics.com/random/peanuts', '#Snoopy #CharlieBrown #Woodstock')
+garfield = comic ('Garfield', 'Jim Davis', 'https://d1ejxu6vysztl5.cloudfront.net/comics/garfield/', '#Garfield #Odie #Jon')
+cyanide = comic ('Cyanide & happiness', 'author', 'http://explosm.net/comics/random/', '#CyanideAndHappiness')								#Cyanide has a group of authors, certain info is completed on ComicTweet ()
+
+comicArray = [snoopy, garfield, cyanide]
+
+def botLogin ():																	#Log to Twitter
 	auth = OAuthHandler(consumer_key, consumer_secret)
 	auth.set_access_token(access_token, access_token_secret)
 	api = API(auth)
 	return api
 
-def comic_date ():													  #Picks a random date to choose the comic strip
-	YY = random.randrange (2000, time.localtime(time.time()).tm_year) #To have the years up to date.
-	MM = random.randrange (1,12)
-	if (MM % 2 == 0):
-		DD = random.randrange (1, 30)
-	else:
-		DD = random.randrange (1,31)
+def write (comicStrip):
+	error = '>> ERROR! Requests -> '
 
-	return DD, MM, YY 											#date/fecha = [DD, MM, YY]
-
-def write (date):					
 	try:
 		f = open ('comic.jpg', 'wb')
-		comic_info = comic_tweet (date)
-		f.write (requests.get (comic_info [2]).content)												#Requests code for Snoopy! (!)									#Peanuts web has some issues with URLs
+		f.write (requests.get (comicArray [comicStrip].url).content)												
 		f.close 
-		
-		return comic_info
 
-	except requests.exceptions.ConnectionError as e:    # This is the correct syntax
-		print (">> " + e)
-
+	except requests.exceptions.ConnectionError as e:    							# This is the correct syntax
+		print (error + str (e))
 	except requests.exceptions.Timeout as e:
-		print (">> " + e)
+		print (error + str (e))
 	    # Maybe set up for a retry, or continue in a retry loop
 	except requests.exceptions.TooManyRedirects as e:
-		print (">> " + e)
+		print (error + str (e))
 	    # Tell the user their URL was bad and try a different one
 	except requests.exceptions.RequestException as e:
-	    # catastrophic error. bail.
-	    print (">> " + e)
+		    # catastrophic error. bail.
+		print (error + str (e))
 
 	except requests.exceptions.HTTPError as e:
-		print (">> " + e)
+		print (error + str (e)) 	
 
-def snoopy (fecha):
-	URL = 'http://www.peanuts.com/wp-content/comic-strip/color-low-resolution/desktop/'				
-	comic_name = 'Peanuts'
-	comic_author = 'Charles M. Schulz'
+def comicTweet (comicStrip):													#Here decides which comic strip will tweet
+	if (comicStrip == 0):
+		URL = requests.get (snoopy.url)
 
-	if (fecha [0] < 10 and fecha [1] < 10 and (fecha [2]-2000) < 10):	#Format to access at the URL picture.
-		URL_D = URL + str (fecha [2]) + '/daily/pe_c' + '0' + str (fecha [2]-2000) + '0' + str (fecha [1]) + '0' + str (fecha [0]) + '.jpg'
-	elif ((fecha [2]-2000) < 10 and fecha [1] < 10):
-		URL_D = URL + str (fecha [2]) + '/daily/pe_c' + '0' + str (fecha [2]-2000) + '0' + str (fecha [1]) + str (fecha [0]) + '.jpg'
-	elif ((fecha [2]-2000) < 10 and fecha [0] < 10):
-		URL_D = URL + str (fecha [2]) + '/daily/pe_c' + '0' + str (fecha [2]-2000) + str (fecha [1]) + '0' + str (fecha [0]) + '.jpg'
-	elif (fecha [1] < 10 and fecha [0] < 10):
-		URL_D = URL + str (fecha [2]) + '/daily/pe_c' + str (fecha [2]-2000) + '0' + str (fecha [1]) + '0' + str (fecha [0]) + '.jpg'
-	elif (fecha [0] < 10):
-		URL_D = URL + str (fecha [2]) + '/daily/pe_c' + str (fecha [2]-2000) + str (fecha [1]) + '0' + str (fecha [0]) + '.jpg'
-	elif (fecha [1] < 10):
-		URL_D = URL + str (fecha [2]) + '/daily/pe_c' + str (fecha [2]-2000) + '0' + str (fecha [1]) + str (fecha [0]) + '.jpg'
-	elif ((fecha [2]-2000) < 10):
-		URL_D = URL + str (fecha [2]) + '/daily/pe_c' + '0' + str (fecha [2]-2000) + str (fecha [1]) + str (fecha [0]) + '.jpg'
-	else:
-		URL_D = URL + str (fecha [2]) + '/daily/pe_c' + str (fecha [2]-2000) + str (fecha [1]) + str (fecha [0]) + '.jpg'
+		soup = BeautifulSoup (URL.content, 'html.parser')
+		img = soup.find_all ('picture')
+		auxString = img [1]
+		auxString = auxString.find_all ('img')
+		snoopy.url = auxString [0].get ('src')
 
+		auxString = soup.find_all (class_="btn-calendar-nav item-control gc-calendar-wrapper js-calendar-wrapper")
+		auxString = auxString [0].get ('data-date')
+		YY = auxString [0:4]
+		MM = auxString [5:7]
+		DD = auxString [8:11]
+		snoopy.date = DD + '/' + MM + '/' + YY
 
-	return comic_name, comic_author, URL_D						#image/link = [name, author, url] ---> Info of the comic strip
+	elif (comicStrip == 1 ):
+		YY = random.randrange (2000, time.localtime(time.time()).tm_year) 						#To have the years up to date.
+		MM = random.randrange (1,12)
+		if (MM % 2 == 0):
+			DD = random.randrange (1, 30)
+		else:
+			DD = random.randrange (1,31)
 
-def garfield (fecha):
-	URL = 'https://d1ejxu6vysztl5.cloudfront.net/comics/garfield/' 
-	comic_name = 'Garfield'
-	comic_author = 	'Jim Davis'
+		garfield.date = str (DD) + '/' + str (MM) + '/' + str (YY)
 
-	if (fecha [0] < 10 and fecha [1] < 10):						#Format to access at the URL picture.
-		URL_D = URL + str (fecha [2]) + '/' + str (fecha [2]) + '-0' + str (fecha [1]) + '-0' + str (fecha [0]) + '.gif'
-	elif (fecha [0] < 10):
-		URL_D = URL + str (fecha [2]) + '/' + str (fecha [2]) + '-' + str (fecha [1]) + '-0' + str (fecha [0]) + '.gif'
-	elif (fecha [1] < 10):
-		URL_D = URL + str (fecha [2]) + '/' + str (fecha [2]) + '-0' + str (fecha [1]) + '-' + str (fecha [0]) + '.gif'
-	else:
-		URL_D = URL + str (fecha [2]) + '/' + str (fecha [2]) + str (fecha [1]) + str (fecha [0]) + '.gif'
+		if (DD < 10 and MM < 10):													#Format to access at the URL picture.
+			garfield.url = garfield.url + str (YY) + '/' + str (YY) + '-0' + str (MM) + '-0' + str (DD) + '.gif'
+		elif (DD < 10):
+			garfield.url = garfield.url + str (YY) + '/' + str (YY) + '-' + str (MM) + '-0' + str (DD) + '.gif'
+		elif (MM < 10):
+			garfield.url = garfield.url + str (YY) + '/' + str (YY) + '-0' + str (MM) + '-' + str (DD) + '.gif'
+		else:
+			garfield.url = garfield.url + str (YY) + '/' + str (YY) + str (MM) + str (DD) + '.gif'
 
+	elif (comicStrip == 2):
+		URL = requests.get (cyanide.url)
 
-	return comic_name, comic_author, URL_D						#image/link = [name, author, url] ---> Info of the comic strip
+		soup = BeautifulSoup (URL.content, 'html.parser')
+		img = soup.find_all (id = 'main-comic')
+		cyanide.url = 'http:' + img[0].get ('src')
+		
+		auxString = soup.find_all (class_ = 'author-credit-name')
+		auxString = auxString [0].get_text ()
+		cyanide.comicAuthor = auxString [3: len (auxString)]
 
-def cyanide ():													# (!) Attention with this function, returns more variables than the others
-	URL = requests.get ('http://explosm.net/comics/random/')
-	comic_name = 'Cyanide & happiness'
+		auxString = soup.find_all (class_ = 'zeta small-bottom-margin past-week-comic-title')
+		cyanide.date = auxString [0].get_text ()
+		cyanide.date = cyanide.date.replace ('.', '/')
 
-	soup = BeautifulSoup (URL.content, "html.parser")
-	img = soup.find_all (id = 'main-comic')
-
-	author = soup.find_all (class_ = 'author-credit-name')
-	comic_author = author [0].get_text()
-	comic_author = comic_author [3:len (comic_author)]
-
-	date = soup.find_all (class_ = 'zeta small-bottom-margin past-week-comic-title')
-	r_date = date[0].get_text()
-	DD = r_date [8:10]
-	MM = r_date [5:7]
-	YY = r_date [0:4]
-
-	URL_D = 'http:' + img[0].get ('src')
-
-	return comic_name, comic_author, URL_D, DD, MM, YY			#image/link = [name, author, url, DD, MM, YY] ---> Info of the comic strip
-
-def comic_tweet (fecha):										#Here decides which comic strip will tweet
-	c_t = random.randrange (0,3)
-	if (c_t == 0):
-		url = snoopy (fecha)
-	elif (c_t == 1 ):
-		url = garfield (fecha)
-	elif (c_t == 2):
-		url = cyanide ()
-
-	return url
-
-def tweet_text (fecha, image):									#Status of the tweet 
-	line = image [0] + ', made by: ' + image [1] + '.\nDate: ' + str (fecha [0]) + '/' + str (fecha [1]) + '/' + str (fecha [2]) + '\n\n' + '#Comics '
-
-	if (len (image) == 3):
-		if (image [0] == 'Peanuts'):
-			line += '#Snoopy #CharlieBrown #Woodstock'
-		elif (image [0] == 'Garfield'):
-			line += '#Garfield #Odie #Jon'
-	else:		
-		if (image [0] == 'Cyanide & happiness'):
-			line = image [0] + ', made by: ' + image [1] + '.\nDate: ' + str (image [3]) + '/' + str (image [4]) + '/' + str (image [5]) + '\n\n' + '#Comics #CyanideAndHappiness'
-
-	return line
-
-def log (fecha, image):
-	print (">> Comic: \t" + image [0])
-	print (">> URL: \t" + image [2])
-	
-	if (image [0] == 'Peanuts' or image [0] == 'Garfield'):
-		print (">> Date: \t" + str (fecha [0]) + '/' + str (fecha [1]) + '/' + str (fecha [2]))
-	else:
-		print (">> Date: \t" + str (image [3]) + '/' + str (image [4]) + '/' + str (image [5]))
-
+def log (comicStrip):
+	print (">> Comic: \t" + comicArray [comicStrip].comicName)
+	print (">> URL: \t" + comicArray [comicStrip].url)
+	print (">> Date: \t" + comicArray [comicStrip].date) 
+	print (">> AUTOR: \t" + comicArray [comicStrip].comicAuthor)
 	print (">> Time: \t" + str (time.localtime (time.time()).tm_hour) + ":" + str (time.localtime (time.time()).tm_min))
+	print (">> Tweet!\n\t---------------------------------------------------------------")
 
-def upload (fecha):
-	app = bot_loggin_T ()
-	image = write (fecha)
-	text = tweet_text (fecha, image)
-	log (fecha, image)
-	app.update_with_media (filename = 'comic.jpg', status = text)
+def upload ():
+	bot = botLoggin ()
+	comicStrip = random.randrange (0,3)
+	comicTweet (comicStrip)
+	write (comicStrip)
+	tweetLine = comicArray [comicStrip].comicName + ', made by: ' + comicArray [comicStrip].comicAuthor + '.\nDate: ' + comicArray [comicStrip].date + '\n\n#Comics ' + comicArray [comicStrip].hashtag
+	bot.update_with_media (filename = 'comic.jpg', status = tweetLine)
+	log (comicStrip)
 
-bot_loggin_R ()
-
-while True: 
+while True:
 	try:
-		date = comic_date ()
-		upload (date)
-		print (">> Tweet!")
-		print ("\n\t---------------------------------------------------------------")
-		time.sleep (7200)				
+		upload ()
+		time.sleep (7200)
 
 	except TweepError as e:
-		api = bot_loggin_T ()
-		api.update_status (status = 'heyyeyaaeyaaaeyaeyaa! @Zeby95')
-		print ("\n>> ERROR!\n>> " + e.reason)
-		print ("\n\t---------------------------------------------------------------")
-		time.sleep (120)
+		print (">> ERROR!\n>>" + e.reason + "\n\t---------------------------------------------------------------")
+		pass
