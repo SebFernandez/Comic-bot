@@ -14,7 +14,7 @@ class comic:
 		self.hashtag = hashtag
 
 snoopy = comic ('Peanuts', 'Charles M. Schulz', 'https://www.peanuts.com/comics/#', '#Snoopy #CharlieBrown #Woodstock')
-garfield = comic ('Garfield', 'Jim Davis', 'https://garfield.com/comic/random', '#Garfield #Odie #Jon')
+garfield = comic ('Garfield', 'Jim Davis', 'https://d1ejxu6vysztl5.cloudfront.net/comics/garfield/', '#Garfield #Odie #Jon')
 cyanide = comic ('Cyanide & happiness', 'author', 'http://explosm.net/comics/random/', '#CyanideAndHappiness')								#Cyanide has a group of authors, certain info is completed on ComicTweet ()
 
 comicArray = [snoopy, garfield, cyanide]
@@ -52,31 +52,38 @@ def comicTweet (comicStrip):										#Here decides which comic strip will tweet
 	if (comicStrip == 0):
 		url = snoopy (fecha)
 	elif (comicStrip == 1 ):
-		URL = requests.get (garfield.url)
+		YY = random.randrange (2000, time.localtime(time.time()).tm_year) #To have the years up to date.
+		MM = random.randrange (1,12)
+		if (MM % 2 == 0):
+			DD = random.randrange (1, 30)
+		else:
+			DD = random.randrange (1,31)
 
-		soup = BeautifulSoup (URL.content, 'html.parser')
-		img = soup.find_all (class_ = 'img-responsive')
-		print (comicArray [comicStrip].url)
-		#garfield.url = img.get ('src')
+		garfield.date = str (DD) + '/' + str (MM) + '/' + str (YY)
 
-		auxString = soup.find_all (id = 'comicdatepicker')
-		garfield.date = auxString.get ('value')
-		print (comicArray [comicStrip].date)
-		time.sleep (15)
+		if (DD < 10 and MM < 10):						#Format to access at the URL picture.
+			garfield.url = garfield.url + str (YY) + '/' + str (YY) + '-0' + str (MM) + '-0' + str (DD) + '.gif'
+		elif (DD < 10):
+			garfield.url = garfield.url + str (YY) + '/' + str (YY) + '-' + str (MM) + '-0' + str (DD) + '.gif'
+		elif (MM < 10):
+			garfield.url = garfield.url + str (YY) + '/' + str (YY) + '-0' + str (MM) + '-' + str (DD) + '.gif'
+		else:
+			garfield.url = garfield.url + str (YY) + '/' + str (YY) + str (MM) + str (DD) + '.gif'
 
 	elif (comicStrip == 2):
-		URL = requests.get (comicArray [comicStrip].url)
+		URL = requests.get (cyanide.url)
 
 		soup = BeautifulSoup (URL.content, 'html.parser')
 		img = soup.find_all (id = 'main-comic')
-		comicArray [comicStrip].url = 'http:' + img[0].get ('src')
+		cyanide.url = 'http:' + img[0].get ('src')
 		
 		auxString = soup.find_all (class_ = 'author-credit-name')
 		auxString = auxString [0].get_text ()
-		comicArray [comicStrip].comicAuthor = auxString [3: len (auxString)]
+		cyanide.comicAuthor = auxString [3: len (auxString)]
 
 		auxString = soup.find_all (class_ = 'zeta small-bottom-margin past-week-comic-title')
-		comicArray [comicStrip].date = auxString [0].get_text ()
+		cyanide.date = auxString [0].get_text ()
+		cyanide.date = cyanide.date.replace ('.', '/')
 
 def log (comicStrip):
 	print (">> Comic: \t" + comicArray [comicStrip].comicName)
@@ -88,7 +95,7 @@ def log (comicStrip):
 
 def upload ():
 	bot = botLoggin ()
-	comicStrip = 1 #random.randrange (0,3)
+	comicStrip = random.randrange (0,2) + 1
 	comicTweet (comicStrip)
 	write (comicStrip)
 	tweetLine = comicArray [comicStrip].comicName + ', made by: ' + comicArray [comicStrip].comicAuthor + '.\nDate: ' + comicArray [comicStrip].date + '\n\n#Comics ' + comicArray [comicStrip].hashtag
