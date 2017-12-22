@@ -9,15 +9,18 @@ class comic:
 	def __init__ (self, comicName, comicAuthor, url, hashtag):
 		self.comicName = comicName
 		self.comicAuthor = comicAuthor
-		self.url = url
+		self.url = url 						#Link to fetch
+		self.download = ''					#Link to download
 		self.date = ''
 		self.hashtag = hashtag
 
 snoopy = comic ('Peanuts', 'Charles M. Schulz', 'https://www.gocomics.com/random/peanuts', '#Snoopy #CharlieBrown #Woodstock')
 garfield = comic ('Garfield', 'Jim Davis', 'https://d1ejxu6vysztl5.cloudfront.net/comics/garfield/', '#Garfield #Odie #Jon')
-cyanide = comic ('Cyanide & happiness', 'author', 'http://explosm.net/comics/random/', '#CyanideAndHappiness')								#Cyanide has a group of authors, certain info is completed on ComicTweet ()
+cyanide = comic ('Cyanide & happiness', 'author', 'http://explosm.net/comics/random/', '#CyanideAndHappiness')	#Cyanide has a group of authors, certain info is completed on ComicTweet ()
+calvinHobbes = comic ('Calvin and Hobbes', 'Bill Watterson', 'https://www.gocomics.com/random/calvinandhobbes', '#CalvinAndHobbes')
+foxtrot = comic ('Foxtrot', 'Bill Amend', 'https://www.gocomics.com/random/foxtrot', '#Foxtrot')
 
-comicArray = [snoopy, garfield, cyanide]
+comicArray = [snoopy, garfield, cyanide, calvinHobbes, foxtrot]
 
 def botLogin ():																	#Log to Twitter
 	auth = OAuthHandler(consumer_key, consumer_secret)
@@ -30,7 +33,7 @@ def write (comicStrip):
 
 	try:
 		f = open ('comic.jpg', 'wb')
-		f.write (requests.get (comicArray [comicStrip].url).content)												
+		f.write (requests.get (comicArray [comicStrip].download).content)												
 		f.close 
 
 	except requests.exceptions.ConnectionError as e:    							# This is the correct syntax
@@ -51,20 +54,7 @@ def write (comicStrip):
 def comicTweet (comicStrip):													#Here decides which comic strip will tweet
 	try:
 		if (comicStrip == 0):
-			URL = requests.get (snoopy.url)
-
-			soup = BeautifulSoup (URL.content, 'html.parser')
-			img = soup.find_all ('picture')
-			auxString = img [1]
-			auxString = auxString.find_all ('img')
-			snoopy.url = auxString [0].get ('src')
-
-			auxString = soup.find_all (class_="btn-calendar-nav item-control gc-calendar-wrapper js-calendar-wrapper")
-			auxString = auxString [0].get ('data-date')
-			YY = auxString [0:4]
-			MM = auxString [5:7]
-			DD = auxString [8:11]
-			snoopy.date = DD + '/' + MM + '/' + YY
+			fetchData (comicStrip)
 
 		elif (comicStrip == 1 ):
 			YY = random.randrange (2000, time.localtime(time.time()).tm_year) 						#To have the years up to date.
@@ -77,20 +67,20 @@ def comicTweet (comicStrip):													#Here decides which comic strip will tw
 			garfield.date = str (DD) + '/' + str (MM) + '/' + str (YY)
 
 			if (DD < 10 and MM < 10):													#Format to access at the URL picture.
-				garfield.url = garfield.url + str (YY) + '/' + str (YY) + '-0' + str (MM) + '-0' + str (DD) + '.gif'
+				garfield.download = garfield.url + str (YY) + '/' + str (YY) + '-0' + str (MM) + '-0' + str (DD) + '.gif'
 			elif (DD < 10):
-				garfield.url = garfield.url + str (YY) + '/' + str (YY) + '-' + str (MM) + '-0' + str (DD) + '.gif'
+				garfield.download = garfield.url + str (YY) + '/' + str (YY) + '-' + str (MM) + '-0' + str (DD) + '.gif'
 			elif (MM < 10):
-				garfield.url = garfield.url + str (YY) + '/' + str (YY) + '-0' + str (MM) + '-' + str (DD) + '.gif'
+				garfield.download = garfield.url + str (YY) + '/' + str (YY) + '-0' + str (MM) + '-' + str (DD) + '.gif'
 			else:
-				garfield.url = garfield.url + str (YY) + '/' + str (YY) + str (MM) + str (DD) + '.gif'
+				garfield.download = garfield.url + str (YY) + '/' + str (YY) + str (MM) + str (DD) + '.gif'
 
 		elif (comicStrip == 2):
 			URL = requests.get (cyanide.url)
 
 			soup = BeautifulSoup (URL.content, 'html.parser')
 			img = soup.find_all (id = 'main-comic')
-			cyanide.url = 'http:' + img[0].get ('src')
+			cyanide.download = 'http:' + img[0].get ('src')
 			
 			auxString = soup.find_all (class_ = 'author-credit-name')
 			auxString = auxString [0].get_text ()
@@ -99,11 +89,34 @@ def comicTweet (comicStrip):													#Here decides which comic strip will tw
 			auxString = soup.find_all (class_ = 'zeta small-bottom-margin past-week-comic-title')
 			cyanide.date = auxString [0].get_text ()
 			cyanide.date = cyanide.date.replace ('.', '/')
+
+		elif (comicStrip == 3):
+			fetchData (comicStrip)
+		
+		elif (comicStrip == 4):
+			fetchData (comicStrip)
+
 	except exception as e:
 		print ('\n\t\t-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-\n')
 		print (">> ERROR!\n>>" + e.reason)
 		print ('\n\t\t-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-\n')
 		pass
+
+def fetchData (comicStrip):										#This function fetchs data from the same source for different comic strips.
+	URL = requests.get (comicArray [comicStrip].url)
+
+	soup = BeautifulSoup (URL.content, 'html.parser')
+	img = soup.find_all ('picture')
+	auxString = img [1]
+	auxString = auxString.find_all ('img')
+	comicArray [comicStrip].download = auxString [0].get ('src')
+	
+	auxString = soup.find_all (class_="btn-calendar-nav item-control gc-calendar-wrapper js-calendar-wrapper")
+	auxString = auxString [0].get ('data-date')
+	YY = auxString [0:4]
+	MM = auxString [5:7]
+	DD = auxString [8:11]
+	comicArray [comicStrip].date = DD + '/' + MM + '/' + YY
 
 def log (comicStrip):
 	print (">> Comic: \t" + comicArray [comicStrip].comicName)
@@ -115,7 +128,7 @@ def log (comicStrip):
 
 def upload ():
 	bot = botLogin ()
-	comicStrip = random.randrange (0,3)
+	comicStrip = random.randrange (0,5)
 	comicTweet (comicStrip)
 	write (comicStrip)
 	tweetLine = comicArray [comicStrip].comicName + ', made by: ' + comicArray [comicStrip].comicAuthor + '.\nDate: ' + comicArray [comicStrip].date + '\n\n#Comics ' + comicArray [comicStrip].hashtag
