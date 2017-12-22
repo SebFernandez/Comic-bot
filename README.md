@@ -1,6 +1,6 @@
 # Comic-bot
 
-How about having a Twitter account that tweets comics? This bot includes the use of PRAW and Tweepy.
+How about having a Twitter account that tweets comics? 
 
 - [x] Peanuts.
 - [x] Garfield.
