@@ -5,7 +5,7 @@ How about having a Twitter account that tweets comics? This bot includes the use
 - [x] Peanuts.
 - [x] Garfield.
 - [x] Cyanide & Happiness.
-- [ ] Calvin and hobbes.
+- [x] Calvin and hobbes.
 - [ ] Foxtrot.
 - [ ] Mafalda (spanish).
 
