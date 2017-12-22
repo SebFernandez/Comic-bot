@@ -6,7 +6,7 @@ How about having a Twitter account that tweets comics? This bot includes the use
 - [x] Garfield.
 - [x] Cyanide & Happiness.
 - [x] Calvin and hobbes.
-- [ ] Foxtrot.
+- [x] Foxtrot.
 - [ ] Mafalda (spanish).
 
 Bot account: [@piumbot](https://twitter.com/PiumBot). 
