@@ -14,7 +14,7 @@ How about having a Twitter account that tweets comics?
 - [x] Long story short.
 - [x] F Minus.
 - [x] B.C.
-
+- [ ] Popeye.
 - [ ] Mafalda (spanish).
 
 Bot account: [@piumbot](https://twitter.com/PiumBot). 
