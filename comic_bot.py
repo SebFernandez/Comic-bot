@@ -19,8 +19,17 @@ garfield = comic ('Garfield', 'Jim Davis', 'https://d1ejxu6vysztl5.cloudfront.ne
 cyanide = comic ('Cyanide & happiness', 'author', 'http://explosm.net/comics/random/', '#CyanideAndHappiness')	#Cyanide has a group of authors, certain info is completed on ComicTweet ()
 calvinHobbes = comic ('Calvin and Hobbes', 'Bill Watterson', 'https://www.gocomics.com/random/calvinandhobbes', '#CalvinAndHobbes')
 foxtrot = comic ('Foxtrot', 'Bill Amend', 'https://www.gocomics.com/random/foxtrot', '#Foxtrot')
+chickens = comic ('Savage Chickens', 'Doug Savage', 'https://www.gocomics.com/random/savage-chickens', '#SavageChickens')
+horse = comic ('Dark side of the horse', 'Samson', 'https://www.gocomics.com/random/darksideofthehorse', '#DarkSideOfTheHorse')
+longStoryShort = comic ('Long Story short', 'Daniel Beyer', 'https://www.gocomics.com/random/long-story-short', '#LongStoryShort')
+fMinus = comic ('F Minus', 'Tony Carrillo', 'https://www.gocomics.com/random/fminus', '#FMinus')
+dilbert = comic ('Dilbert', 'Scott Adams', 'https://www.gocomics.com/random/dilbert-classics', '#Dilbert')
+offTheMark = comic ('Off the mark', 'Mark Parisi', 'https://www.gocomics.com/random/offthemark', '#OffTheMark')
+bc = comic ('B.C', 'Mastrolanni and Hart', 'https://www.gocomics.com/random/bc', '#BC #AC #DC #Caveman')
 
-comicArray = [snoopy, garfield, cyanide, calvinHobbes, foxtrot]
+popeye = comic ('Popeye', 'Elzie Crisler Segar', 'http://comicskingdom.com/popeye/', '#Popeye #OliveOyl #Spinach')
+
+comicArray = [snoopy, garfield, cyanide, calvinHobbes, foxtrot, chickens, horse, longStoryShort, fMinus, dilbert, offTheMark, bc]
 
 def botLogin ():																	#Log to Twitter
 	auth = OAuthHandler(consumer_key, consumer_secret)
@@ -96,9 +105,28 @@ def comicTweet (comicStrip):													#Here decides which comic strip will tw
 		elif (comicStrip == 4):
 			fetchData (comicStrip)
 
-	except exception as e:
-		print ('\n\t\t-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-\n')
-		print (">> ERROR!\n>>" + e.reason)
+		elif (comicStrip == 5):
+			fetchData (comicStrip)
+
+		elif (comicStrip == 6):
+			fetchData (comicStrip)
+
+		elif (comicStrip == 7):
+			fetchData (comicStrip)
+		
+		elif (comicStrip == 8):
+			fetchData (comicStrip)
+	
+		elif (comicStrip == 9):
+			fetchData (comicStrip)
+	
+		elif (comicStrip == 10):
+			fetchData (comicStrip)
+
+		elif (comicStrip == 11):
+			fetchData (comicStrip)
+
+	except:
 		print ('\n\t\t-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-\n')
 		pass
 
@@ -120,7 +148,7 @@ def fetchData (comicStrip):										#This function fetchs data from the same so
 
 def log (comicStrip):
 	print (">> Comic: \t" + comicArray [comicStrip].comicName)
-	print (">> URL: \t" + comicArray [comicStrip].url)
+	print (">> URL: \t" + comicArray [comicStrip].download)
 	print (">> Date: \t" + comicArray [comicStrip].date) 
 	print (">> AUTOR: \t" + comicArray [comicStrip].comicAuthor)
 	print (">> Time: \t" + str (time.localtime (time.time()).tm_hour) + ":" + str (time.localtime (time.time()).tm_min))
@@ -128,7 +156,7 @@ def log (comicStrip):
 
 def upload ():
 	bot = botLogin ()
-	comicStrip = random.randrange (0,5)
+	comicStrip = random.randrange (0,12)
 	comicTweet (comicStrip)
 	write (comicStrip)
 	tweetLine = comicArray [comicStrip].comicName + ', made by: ' + comicArray [comicStrip].comicAuthor + '.\nDate: ' + comicArray [comicStrip].date + '\n\n#Comics ' + comicArray [comicStrip].hashtag
